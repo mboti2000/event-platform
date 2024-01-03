@@ -1,15 +1,24 @@
 import Collection from "@/components/shared/Collection";
 import { Button } from "@/components/ui/button";
 import { getEventsByUser } from "@/lib/actions/event.actions";
+import { getOrdersByUser } from "@/lib/actions/order.actions";
+import { IOrder } from "@/lib/database/models/order.model";
+import { SearchParamProps } from "@/types";
 import { auth } from "@clerk/nextjs";
 import Link from "next/link";
 import React from "react";
 
-const Profile = async () => {
+const Profile = async ({ searchParams }: SearchParamProps) => {
   const { sessionClaims } = auth();
   const userId = sessionClaims?.userId as string;
 
-  const organizedEvents = await getEventsByUser({ userId, page: 1 });
+  const ordersPage = Number(searchParams?.ordersPage) || 1;
+  const eventsPage = Number(searchParams?.eventsPage) || 1;
+
+  const organizedEvents = await getEventsByUser({ userId, page: eventsPage });
+  const orders = await getOrdersByUser({ userId, page: ordersPage });
+
+  const orderedEvents = orders?.data.map((order: IOrder) => order.event) || [];
 
   return (
     <>
@@ -23,18 +32,16 @@ const Profile = async () => {
       </section>
 
       <section className="wrapper my-8">
-        {/*
         <Collection
-          data={events?.data}
+          data={orderedEvents}
           emptyTitle="No event tickets purchased yet"
           emptySubtext="No worries - plenty of exciting events to explore!"
           collectionType="My_Tickets"
           limit={3}
-          page={1}
-          totalPages={2}
+          page={ordersPage}
+          totalPages={orders?.totalPages}
           urlParamName="ordersPage"
         />
-  */}
       </section>
 
       <section className="bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10">
@@ -53,8 +60,8 @@ const Profile = async () => {
           emptySubtext="Go create sime now"
           collectionType="Events_Organized"
           limit={6}
-          page={1}
-          totalPages={2}
+          page={eventsPage}
+          totalPages={organizedEvents?.totalPages}
           urlParamName="eventsPage"
         />
       </section>
